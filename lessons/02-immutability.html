@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 2: Immutability</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 2 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag kind-property">Property / Test</span>
+<h1>Immutability</h1>
+<p class="lede">What makes "pure function" a guarantee instead of just a rule you have to remember.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>A value is <strong>immutable</strong> when it can never be changed after it's created. If you want a "changed" version, you don't modify the original — you build a brand-new value with the change applied, and leave the original exactly as it was.</p>
+  <p>Concretely: <code>array.push(x)</code> mutates; <code>[...array, x]</code> doesn't. <code>obj.key = x</code> mutates; <code>{ ...obj, key: x }</code> doesn't.</p>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <ul>
+    <li><strong>Makes purity real</strong> &mdash; a <a href="01-pure-functions.html">pure function</a> can't mutate its arguments; immutable data structures enforce that instead of relying on discipline.</li>
+    <li><strong>Safe snapshots</strong> &mdash; anything holding a reference to a value (an undo stack, a cache, a previous render) can trust it will never change out from under it.</li>
+    <li><strong>Safe sharing</strong> &mdash; you can hand the same value to multiple functions, threads, or components without one's changes leaking into another's.</li>
+    <li><strong>Easy change detection</strong> &mdash; "did this change?" becomes a reference check (<code>oldValue !== newValue</code>) instead of a deep comparison, which is exactly how libraries like React and Redux decide what to re-render.</li>
+  </ul>
+  <p class="callout">Mutation's danger isn't the mutation itself &mdash; it's that anyone else holding a reference to that same value gets the change too, whether they expected it or not.</p>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; Mutable</h3>
+    <pre><code>function addTodoMutable(todos, todo) {
+  todos.push(todo); // changes the array in place
+  return todos;
+}</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; Immutable</h3>
+    <pre><code>function addTodoImmutable(todos, todo) {
+  return [...todos, todo]; // new array
+}</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p>Building an undo history by pushing "snapshots" of a todo list into an array &mdash; using the mutable version, every "snapshot" is secretly the same array:</p>
+  <pre><code>let todos = ["Buy milk"];
+history.push(todos);
+todos = addTodoMutable(todos, "Walk dog");
+history.push(todos);
+todos = addTodoMutable(todos, "Do laundry");
+history.push(todos);</code></pre>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Mutable: 'undo' history (should show 3 different snapshots):
+[
+  [ 'Buy milk', 'Walk dog', 'Do laundry' ],
+  [ 'Buy milk', 'Walk dog', 'Do laundry' ],
+  [ 'Buy milk', 'Walk dog', 'Do laundry' ]
+]
+
+Immutable: undo history (3 real, distinct snapshots):
+[
+  [ 'Buy milk' ],
+  [ 'Buy milk', 'Walk dog' ],
+  [ 'Buy milk', 'Walk dog', 'Do laundry' ]
+]
+
+Earliest snapshot is untouched: true</div>
+  <p>The mutable history has three entries but they're all the same array — <code>push</code> changed it under everyone who was holding a reference to it, so "undo" has nothing distinct to go back to. The immutable version gives three genuinely different snapshots, because each step created a new array instead of changing the old one.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="01-pure-functions.html">
+    <h4>Pure Functions</h4>
+    <p>Purity requires not mutating arguments; immutability is what turns that requirement into a guarantee.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Persistent Data Structures</h4>
+    <p>Real-world immutable collections don't copy the whole structure on every change &mdash; they share unchanged parts internally to stay fast.</p>
+  </span>
+  <a class="concept" href="03-referential-transparency.html">
+    <h4>Referential Transparency</h4>
+    <p>Relies on immutability: an expression can only be safely replaced by its value if that value can't later change.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Lens</h4>
+    <p>A pattern for reading and "updating" deeply nested immutable data without manually spreading every level.</p>
+  </span>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 2</code></pre>
+  <p class="run-hint">Try logging <code>history[0]</code> vs <code>historyImmutable[0]</code> and see which one still has just 1 item.</p>
+</div>
+
+<footer class="pager">
+  <a href="01-pure-functions.html">&larr; Pure Functions</a>
+  <a href="03-referential-transparency.html">Referential Transparency &rarr;</a>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 6: Currying</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 6 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag">Technique</span>
+<h1>Currying</h1>
+<p class="lede">Give a function part of its input now, get back a specialized function waiting for the rest.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>Picture a two-question form that normally shows both questions on one page: "what's your rate?" and "what's your price?" <strong>Currying</strong> splits that into two separate pages — answer the first question, and you're handed a new, smaller form that only asks the second. You can even hand that half-filled form to someone else to finish.</p>
+  <p>In code: a normal function <code>f(a, b)</code> wants both arguments at once. A curried version, <code>f(a)(b)</code>, takes <code>a</code> first and returns a brand-new function that's still waiting for <code>b</code>. Nothing is computed until the last argument arrives.</p>
+  <pre><code>const applyDiscount = (rate) => (price) => price * (1 - rate);
+
+applyDiscount(0.1);       // => a function, waiting for `price`
+applyDiscount(0.1)(50);   // => 45, now it runs</code></pre>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <p><a href="05-higher-order-functions.html">Lesson 5</a> showed functions that return functions as the mechanism for reuse. Currying applies that mechanism on purpose, to every argument, which pays off specifically where <a href="04-function-composition.html">Lesson 4</a>'s <code>pipe</code> needs it: every step in a pipe can only pass <strong>one</strong> value through. A curried function already takes one argument at a time, so it slots into a pipe directly — an un-curried, multi-argument function needs a hand-written wrapper for every case you need.</p>
+  <ul>
+    <li><strong>Specialized functions, free</strong> &mdash; <code>applyDiscount(0.1)</code> hands back a ready-to-use "10%-off" function, with no wrapper to write.</li>
+    <li><strong>Configuration becomes data</strong> &mdash; a new rate, region, or rule is a new row of data, not a new function someone has to hand-write (and risk getting wrong).</li>
+    <li><strong>Plays directly with <code>pipe</code>/<code>compose</code></strong> &mdash; curried functions are exactly the one-argument shape those HOFs expect.</li>
+  </ul>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; Un-curried, hand-written wrapper per case</h3>
+    <pre><code>const applyDiscount = (rate, price) =>
+  price * (1 - rate);
+
+// pipe only passes ONE value, so:
+const applyUSDiscount = (price) =>
+  applyDiscount(0.10, price);</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; Curried, no wrapper needed</h3>
+    <pre><code>const applyDiscount = (rate) => (price) =>
+  price * (1 - rate);
+
+// fits directly into pipe:
+pipe(applyDiscount(0.10), addTax(0.08))</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p><strong>The setup:</strong> a pricing pipeline needs a discount and tax rate per region. With un-curried functions, each region needs its own hand-written wrapper to get down to the one-argument shape <code>pipe</code> requires. Adding Japan means copy-pasting the US wrapper pattern &mdash; and someone forgets to change the rate:</p>
+  <pre><code>const applyUSDiscount = (price) => applyDiscount(0.10, price);
+const applyJPDiscount = (price) => applyDiscount(0.10, price); // bug: copied from US, should be 0.05</code></pre>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Un-curried, hand-written wrappers per region:
+  US total for $100: 97.2
+  JP total for $100 (should use a 5% discount): 99.00000000000001 &lt;-- wrong, copied the US discount rate
+
+Curried, a region is just a row of data:
+  US total for $100: 97.2
+  JP total for $100: 104.50000000000001
+
+applyDiscount(0.1) returns a function, not a number: true
+Calling it on $50 and $200: 45 180</div>
+  <p>With the curried version, a region is just an entry in a <code>regions</code> table &mdash; <code>applyDiscount(regions.JP.discount)</code> builds the specialized function on the spot. There's no wrapper function to copy-paste, so there's nothing to get wrong when a new region shows up.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="05-higher-order-functions.html">
+    <h4>Higher-Order Functions</h4>
+    <p>A curried function is a HOF by construction &mdash; every call except the last one returns another function.</p>
+  </a>
+  <a class="concept" href="04-function-composition.html">
+    <h4>Function Composition</h4>
+    <p>Currying is what makes a multi-argument function usable inside a <code>pipe</code>/<code>compose</code> chain, which only passes one value per step.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Partial Application</h4>
+    <p>The general idea currying is a specific, disciplined version of: fixing some of a function's arguments ahead of time to get a smaller function back.</p>
+  </span>
+  <span class="concept planned">
+    <h4>Point-Free Style</h4>
+    <p>Curried, composable functions are what make it possible to define a pipeline without ever naming the data flowing through it.</p>
+  </span>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 6</code></pre>
+  <p class="run-hint">Add a third region (say, <code>EU: { discount: 0.2, tax: 0.2 }</code>) to the <code>regions</code> table and call <code>totalFor("EU")(100)</code> &mdash; no new wrapper function needed, just a new row of data.</p>
+</div>
+
+<footer class="pager">
+  <a href="05-higher-order-functions.html">&larr; Higher-Order Functions</a>
+  <a href="../index.html">All lessons</a>
+</footer>
+
+</div>
+</body>
+</html>

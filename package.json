@@ -1,0 +1,13 @@
+{
+  "name": "fp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lesson": "tsx",
+    "test": "node scripts/run-lesson.mjs"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

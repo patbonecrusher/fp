@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 3: Referential Transparency</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 3 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag kind-property">Property / Test</span>
+<h1>Referential Transparency</h1>
+<p class="lede">The payoff you actually get from purity and immutability: an expression and its value become interchangeable.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>Start with plain math: <code>2 + 2</code>. Anywhere you see <code>2 + 2</code>, you can write <code>4</code> instead, and nothing about the surrounding math changes. <code>2 + 2</code> and <code>4</code> are just two names for the same thing &mdash; totally swappable. That's the whole idea.</p>
+  <p>Now bring that into code. If <code>double(3)</code> just computes and returns a number, then <code>double(3)</code> and <code>6</code> are interchangeable too &mdash; nothing in the program can tell the difference between calling it and just writing <code>6</code>.</p>
+  <p>Here's where it can break: suppose <code>double</code> also does something extra on the side, like printing a log line:</p>
+  <pre><code>function double(x) {
+  console.log("computing...");
+  return x * 2;
+}</code></pre>
+  <p>Now <code>double(3)</code> isn't just "6" &mdash; it's "6, <em>and</em> a log line gets printed." Replace <code>double(3)</code> with <code>6</code> somewhere and the math still checks out, but the log line silently disappears. The call and its value are no longer interchangeable.</p>
+  <p>That's the formal version, stated precisely: an expression is <strong>referentially transparent</strong> if you can replace it with the value it evaluates to, anywhere it appears, and the program behaves exactly the same afterward. If swapping them changes what the program does &mdash; a side effect gets dropped or duplicated &mdash; the expression is not referentially transparent.</p>
+</div>
+
+<h2>A property, not a technique</h2>
+<div class="card">
+  <p>Unlike the last two lessons, this one isn't something you write. You can't "implement" referential transparency the way you implement a pure function — it's not a tool in the toolbox. It's a <strong>property you test for</strong>: pick an expression, ask "can I swap this for its value?", and the answer is yes or no.</p>
+  <p>Think of it this way: <a href="01-pure-functions.html">purity</a> is a property of how a function is <em>implemented</em> &mdash; no side effects inside it. Referential transparency is a property of how a <em>call site</em> is allowed to be <em>used</em> &mdash; freely substitutable with its result. Purity is what makes RT true; RT is the payoff you're then entitled to rely on.</p>
+  <p class="callout">That's also why RT matters even though it's not a technique: it's the precise condition that licenses techniques coming up later &mdash; memoization, lazy evaluation, safe refactoring, equational reasoning. Each of those is really saying "this is safe to do <em>because</em> the expression is referentially transparent." Learn to spot the property, and you'll know exactly when those techniques are safe to reach for.</p>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <ul>
+    <li><strong>Safe "extract variable" refactors</strong> &mdash; pulling a repeated call out into a variable is one of the most common refactors there is; RT is what guarantees it doesn't change behavior.</li>
+    <li><strong>Memoization</strong> &mdash; caching only makes sense if the cached value can stand in for the real call every time. Without RT, a cache is a bug, not an optimization.</li>
+    <li><strong>Equational reasoning</strong> &mdash; you can simplify code the way you'd simplify algebra, substituting equals for equals, instead of tracing execution order in your head.</li>
+    <li><strong>Lazy evaluation</strong> &mdash; a language/runtime can freely choose *when* (or whether) to evaluate an expression, since evaluating it early, late, once, or twice all produce the same outcome.</li>
+  </ul>
+  <p class="callout">Referential transparency isn't a separate discipline from <a href="01-pure-functions.html">purity</a> and <a href="02-immutability.html">immutability</a> &mdash; it's what you get for free once both are true. Break either one, and RT breaks with it.</p>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; Not referentially transparent</h3>
+    <pre><code>function getDiscountedPrice(price) {
+  apiCallCount++;        // side effect
+  return price * 0.9;
+}
+
+// calling twice vs. caching once
+// behave DIFFERENTLY</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; Referentially transparent</h3>
+    <pre><code>function getDiscountedPrice(price) {
+  return price * 0.9;   // no side effect
+}
+
+// calling twice vs. caching once
+// behave IDENTICALLY</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p><strong>The setup:</strong> you're totaling a cart with 2 of the same $100 item, each needing a 10% discount applied via <code>getDiscountedPrice(100)</code>.</p>
+  <p><strong>Version A &mdash; the obvious way:</strong> call the pricing function once per item, since there are 2 items:</p>
+  <pre><code>const totalA = getDiscountedPrice(100) + getDiscountedPrice(100);</code></pre>
+  <p><strong>Version B &mdash; a completely normal refactor:</strong> a teammate notices the function gets called twice with the exact same argument and "optimizes" it &mdash; compute it once, reuse the result. This is a textbook "extract repeated expression into a variable" refactor, the kind every style guide encourages:</p>
+  <pre><code>const discounted = getDiscountedPrice(100);
+const totalB = discounted + discounted;</code></pre>
+  <p>That refactor is only <em>actually</em> safe if <code>getDiscountedPrice(100)</code> is referentially transparent &mdash; interchangeable with whatever it returns. Because it also does a side effect (a simulated API call), it isn't:</p>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Version A: calling the expression twice
+  (simulated API call #1 for price 100)
+  (simulated API call #2 for price 100)
+total: 180 | API calls made: 2
+
+Version B: 'the same expression', extracted into a variable
+  (simulated API call #1 for price 100)
+total: 180 | API calls made: 1
+
+Version C: calling the pure expression twice
+total: 180
+
+Version D: extracted into a variable — identical either way
+total: 180
+
+C and D are indistinguishable: true</div>
+  <p>The <strong>math</strong> comes out identical either way &mdash; <code>total: 180</code> both times, so the refactor "looks" safe. But the <strong>side effect count</strong> doesn't: Version A hit the "API" twice, Version B only once. Nothing about the code looked wrong, yet a real side effect silently got cut in half. Versions C/D repeat the exact same refactor on the pure function &mdash; with no side effect to lose, the refactor really is safe, and the two forms are genuinely interchangeable.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="01-pure-functions.html">
+    <h4>Pure Functions</h4>
+    <p>Purity is what makes referential transparency possible in the first place &mdash; no hidden state, no side effects to lose.</p>
+  </a>
+  <a class="concept" href="02-immutability.html">
+    <h4>Immutability</h4>
+    <p>If the value an expression depends on could change later, "replace it with its current value" stops being safe.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Memoization</h4>
+    <p>A cache is only correct if the cached value can always substitute for a fresh call &mdash; exactly what RT guarantees.</p>
+  </span>
+  <span class="concept planned">
+    <h4>Lazy Evaluation</h4>
+    <p>RT is why a lazy language can defer or skip evaluating an expression without changing what the program computes.</p>
+  </span>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 3</code></pre>
+  <p class="run-hint">Add a <code>console.log</code> side effect inside <code>getDiscountedPricePure</code> and watch Version C/D diverge in call count too &mdash; it's the side effect breaking RT, not the discount math.</p>
+</div>
+
+<footer class="pager">
+  <a href="02-immutability.html">&larr; Immutability</a>
+  <a href="../index.html">All lessons</a>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 5: Higher-Order Functions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 5 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag">Technique</span>
+<h1>Higher-Order Functions</h1>
+<p class="lede">Separate the loop (mechanism) from what happens on each item (policy) — write the loop once, reuse it forever.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>Ordinary functions operate on data: numbers, strings, objects. A <strong>higher-order function</strong> treats <em>functions</em> as the data it operates on &mdash; it accepts a function as an argument, returns a new function, or both.</p>
+  <p>You already used one in <a href="04-function-composition.html">Lesson 4</a> without naming it: <code>pipe(f, g, h)</code> takes functions in and hands back a brand-new function. <code>map</code>, <code>filter</code>, and <code>reduce</code> are the most common HOFs of all &mdash; this lesson builds one from scratch to see exactly why they exist.</p>
+  <pre><code>function myFilter(list, predicate) {
+  const result = [];
+  for (const item of list) {
+    if (predicate(item)) result.push(item);
+  }
+  return result;
+}</code></pre>
+  <p><code>myFilter</code> doesn't know or care what "adult" or "active" means — it just runs whatever function you hand it against every item. The function you pass in (<code>predicate</code>) is the only thing that changes between calls.</p>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <ul>
+    <li><strong>One loop, many policies</strong> &mdash; the iteration logic (how to walk the list, build up a result) is written and tested exactly once, no matter how many different conditions you need.</li>
+    <li><strong>Declarative call sites</strong> &mdash; <code>users.filter(isAdult)</code> reads as <em>what</em> you want, not a multi-line description of <em>how</em> to get it.</li>
+    <li><strong>Small, composable predicates</strong> &mdash; conditions like <code>isAdult</code> or <code>notDeleted</code> become reusable, independently testable building blocks, the same way Lesson 4's small functions were.</li>
+    <li><strong>Foundation for everything ahead</strong> &mdash; currying, memoization, and later the Functor/Monad pattern from the glossary you linked all lean on functions-as-arguments.</li>
+  </ul>
+  <p class="callout">This is <a href="01-pure-functions.html">Lesson 1</a> and <a href="04-function-composition.html">Lesson 4</a> combined into one habit: write small pure predicates, then let a single trusted HOF do the iterating for all of them.</p>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; One hand-rolled loop per case</h3>
+    <pre><code>function filterAdults(list) {
+  const result = [];
+  for (const u of list) {
+    if (u.age >= 18) result.push(u);
+  }
+  return result;
+}
+// ...a near-identical loop,
+// copy-pasted, for every other
+// condition you need</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; One loop, many predicates</h3>
+    <pre><code>function myFilter(list, predicate) {
+  const result = [];
+  for (const u of list) {
+    if (predicate(u)) result.push(u);
+  }
+  return result;
+}
+
+myFilter(users, u => u.age >= 18)</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p><strong>The setup:</strong> a user list includes a soft-deleted account (<code>deleted: true</code>) that should never appear in <em>any</em> filtered list &mdash; not the adults list, not the active-users list.</p>
+  <p>With hand-rolled loops, that rule has to be added to every copy of the loop separately. Someone fixes the adults loop and misses the other one:</p>
+  <pre><code>function filterAdultsFixed(list) {
+  for (const u of list) {
+    if (u.age >= 18 &amp;&amp; !u.deleted) result.push(u); // fixed here
+  }
+  ...
+}
+// filterActiveUsers still has its own separate loop — untouched</code></pre>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Monolithic, before excluding soft-deleted users:
+  adults: [ 'Grace', 'Alan', 'Barbara' ]
+  active: [ 'Ada', 'Alan', 'Barbara' ]
+
+After fixing the 'exclude deleted' rule in ONE loop:
+  adults: [ 'Grace', 'Barbara' ]
+  active: [ 'Ada', 'Alan', 'Barbara' ] &lt;-- Alan (deleted) still slipped through
+
+Higher-order, before excluding soft-deleted users:
+  adults: [ 'Grace', 'Alan', 'Barbara' ]
+  active: [ 'Ada', 'Alan', 'Barbara' ]
+
+After adding the 'exclude deleted' rule to both predicates:
+  adults: [ 'Grace', 'Barbara' ]
+  active: [ 'Ada', 'Barbara' ] &lt;-- Alan correctly excluded everywhere</div>
+  <p>With <code>myFilter</code>, there's only ever one loop. Fixing "exclude deleted users" means writing one small predicate (<code>notDeleted</code>) and combining it into each policy &mdash; there's no second copy of the loop left to forget about.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="01-pure-functions.html">
+    <h4>Pure Functions</h4>
+    <p>A HOF is only predictable if the functions passed into it are pure &mdash; an impure predicate makes iteration order and side effects entangled.</p>
+  </a>
+  <a class="concept" href="04-function-composition.html">
+    <h4>Function Composition</h4>
+    <p><code>pipe</code> and <code>compose</code> are themselves higher-order functions: they take functions in and return a new function.</p>
+  </a>
+  <a class="concept" href="06-currying.html">
+    <h4>Currying</h4>
+    <p>Reshapes a multi-argument function into a chain of one-argument functions &mdash; which makes passing functions into HOFs like <code>pipe</code> much more practical.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Partial Application</h4>
+    <p>Fixing some of a function's arguments ahead of time, producing a new, smaller function &mdash; a direct use of "returns a function."</p>
+  </span>
+  <span class="concept planned">
+    <h4>Point-Free Style</h4>
+    <p>Writing a pipeline of HOFs without ever naming the data flowing through it.</p>
+  </span>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 5</code></pre>
+  <p class="run-hint">Write a third predicate &mdash; say, <code>isTeen</code> &mdash; and pass it to <code>myFilter</code>. No new loop required, just a new one-line function.</p>
+</div>
+
+<footer class="pager">
+  <a href="04-function-composition.html">&larr; Function Composition</a>
+  <a href="06-currying.html">Currying &rarr;</a>
+</footer>
+
+</div>
+</body>
+</html>

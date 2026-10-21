@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 1: Pure Functions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 1 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag kind-property">Property / Test</span>
+<h1>Pure Functions</h1>
+<p class="lede">The single idea almost everything else in functional programming is built on top of.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>A function is <strong>pure</strong> when it satisfies two rules:</p>
+  <ol>
+    <li><strong>Same input &rarr; same output, always.</strong> No randomness, no reading the clock, no reading a global variable that might have changed.</li>
+    <li><strong>No side effects.</strong> It doesn't mutate its arguments, doesn't write to the console/disk/network, doesn't touch any variable outside its own scope.</li>
+  </ol>
+  <p>If you can't predict a function's return value just by looking at the arguments you're passing it, it isn't pure.</p>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <ul>
+    <li><strong>Testable</strong> &mdash; assert on input/output pairs, no setup or mocking required.</li>
+    <li><strong>Predictable</strong> &mdash; you can reason about a call in isolation, without reading the rest of the file.</li>
+    <li><strong>Cacheable</strong> &mdash; a pure function can be memoized safely, since the same input will never need recomputing.</li>
+    <li><strong>Parallel-safe</strong> &mdash; no shared mutable state means no race conditions between calls.</li>
+    <li><strong>Refactor-safe</strong> &mdash; move it, inline it, call it twice instead of once &mdash; nothing breaks elsewhere.</li>
+  </ul>
+  <p class="callout">Impure code doesn't just risk bugs &mdash; it hides them. The bug lives wherever the hidden state was last changed, which can be nowhere near the function that misbehaves.</p>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; Impure</h3>
+    <pre><code>let taxRate = 0.08; // shared, mutable
+
+function addItemImpure(cart, price) {
+  cart.total += price * (1 + taxRate);
+  return cart.total; // mutates its argument
+}</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; Pure</h3>
+    <pre><code>function priceWithTax(price, rate) {
+  return price * (1 + rate);
+}
+
+function addItemPure(cart, price, rate) {
+  return { total: cart.total + priceWithTax(price, rate) };
+}</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p>Two calls that look identical at the call site (<code>addItemImpure(cart, 10)</code>) give different results, because <code>taxRate</code> changed somewhere else in the program between them:</p>
+  <pre><code>let cartA = { total: 0 };
+addItemImpure(cartA, 10);
+// taxRate changes elsewhere in the codebase...
+let cartB = { total: 0 };
+addItemImpure(cartB, 10);</code></pre>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Impure cart after adding $10 item: 10.8
+Impure cart after adding another $10 item: 12          &lt;-- same call, different result
+
+Pure: original cart is untouched: 0
+Pure: new cart has the item: 10.8
+Pure: same inputs always give the same output: true</div>
+  <p>The pure version can never produce that surprise: every input it depends on (<code>price</code>, <code>rate</code>, the cart itself) is right there in the argument list, and the original cart is left untouched rather than mutated.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="03-referential-transparency.html">
+    <h4>Referential Transparency</h4>
+    <p>Really the same property stated differently: a pure call can be swapped for its return value with no change in behavior.</p>
+  </a>
+  <a class="concept" href="02-immutability.html">
+    <h4>Immutability</h4>
+    <p>Purity requires not mutating arguments; immutable data makes that a guarantee instead of a rule you have to remember.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Side Effects</h4>
+    <p>Purity is defined as the <em>absence</em> of side effects &mdash; this is the term it's contrasted against.</p>
+  </span>
+  <span class="concept planned">
+    <h4>Idempotence</h4>
+    <p>Related but distinct: <code>f(f(x)) === f(x)</code>. A function can be pure but not idempotent, or idempotent but not pure.</p>
+  </span>
+  <span class="concept planned">
+    <h4>Memoization</h4>
+    <p>Only safe on pure functions &mdash; it assumes "same input &rarr; same output" will hold forever.</p>
+  </span>
+  <a class="concept" href="04-function-composition.html">
+    <h4>Function Composition</h4>
+    <p>Composing pure functions keeps the whole pipeline pure; one impure link breaks the guarantee downstream.</p>
+  </a>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 1</code></pre>
+  <p class="run-hint">Try changing <code>taxRate</code> at different points in the impure section and predict the output before running &mdash; then try the same with the pure functions.</p>
+</div>
+
+<footer class="pager">
+  <a href="../index.html">&larr; All lessons</a>
+  <a href="02-immutability.html">Immutability &rarr;</a>
+</footer>
+
+</div>
+</body>
+</html>

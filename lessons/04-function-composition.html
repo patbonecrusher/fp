@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 4: Function Composition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top">
+  <a href="../index.html">&larr; All lessons</a>
+  <span>Lesson 4 of N</span>
+</nav>
+
+<span class="tag">Foundations</span><span class="tag">Technique</span>
+<h1>Function Composition</h1>
+<p class="lede">Build pipelines out of small, reusable functions instead of writing one big function per pipeline.</p>
+
+<h2>What it is</h2>
+<div class="card">
+  <p>Think of an assembly line: a part goes into machine A, what comes out of A goes into machine B, what comes out of B goes into machine C. Nobody built one giant machine that does A, B, and C internally &mdash; three small, independent machines got chained together, in a specific order.</p>
+  <p>Function composition is that, for functions: <code>compose(f, g)(x)</code> just means <code>f(g(x))</code> &mdash; run <code>x</code> through <code>g</code>, then run the result through <code>f</code>. Chain enough small functions together and you get a pipeline, without ever writing a function that does everything itself.</p>
+  <p>Two common helpers do this for a whole list of functions at once: <code>pipe(f, g, h)(x)</code> runs left-to-right (<code>x</code> &rarr; f &rarr; g &rarr; h), while <code>compose(f, g, h)(x)</code> runs right-to-left (<code>x</code> &rarr; h &rarr; g &rarr; f). Same idea, opposite reading direction &mdash; pick one convention and stick to it.</p>
+</div>
+
+<h2>Why it matters</h2>
+<div class="card">
+  <ul>
+    <li><strong>One source of truth per step</strong> &mdash; each small function (like "add tax") exists in exactly one place. Fix it there, and every pipeline built from it is fixed too.</li>
+    <li><strong>Reusable building blocks</strong> &mdash; the same small functions can be assembled into different pipelines for different purposes, instead of copy-pasting the logic into each new "big" function.</li>
+    <li><strong>Independently testable</strong> &mdash; you can unit-test <code>addTax</code> on its own, instead of only being able to test it buried inside a 40-line function.</li>
+    <li><strong>Order becomes visible</strong> &mdash; <code>pipe(applyDiscount, addTax)</code> tells you the order at a glance; the same logic buried in a function body means reading every line to find out.</li>
+  </ul>
+  <p class="callout">This only works cleanly when the functions being composed are <a href="01-pure-functions.html">pure</a>. Compose functions with hidden side effects and the order they run in starts to matter in ways you can't see just by reading the pipeline.</p>
+</div>
+
+<h2>Before / after</h2>
+<div class="compare">
+  <div class="panel bad">
+    <h3>&#10007; Monolithic, duplicated logic</h3>
+    <pre><code>function wholesaleTotal(price) {
+  const d = price * 0.9;
+  return d * 1.08; // tax, copy 1
+}
+
+function retailTotal(price) {
+  const t = price * 1.08; // tax, copy 2
+  return t + 5;
+}</code></pre>
+  </div>
+  <div class="panel good">
+    <h3>&#10003; Composed from shared blocks</h3>
+    <pre><code>const applyDiscount = p => p * 0.9;
+const addTax = p => p * 1.08; // tax, ONE copy
+const addLateFee = p => p + 5;
+
+const wholesaleTotal = pipe(applyDiscount, addTax);
+const retailTotal = pipe(addTax, addLateFee);</code></pre>
+  </div>
+</div>
+
+<h2>Watch it break</h2>
+<div class="card">
+  <p>The tax rate changes from 8% to 8.25%. In the monolithic version, that formula was copy-pasted into two different functions &mdash; someone fixes one and misses the other:</p>
+  <pre><code>function wholesaleTotalFixed(price) {
+  return (price * 0.9) * 1.0825; // fixed here
+}
+// retailTotal still has the old `* 1.08` — untouched, and easy to miss</code></pre>
+  <p>Actual output when you run the lesson script:</p>
+  <div class="output">Monolithic, tax rate 1.08:
+  wholesale total for $100: 97.2
+  retail total for $100: 113
+
+After fixing the tax rate in ONE of the two functions:
+  wholesale total for $100: 97.425
+  retail total for $100: 113 &lt;-- still using the OLD tax rate, silently
+
+Composed, tax rate 1.08:
+  wholesale total for $100: 97.2
+  retail total for $100: 113
+
+After fixing the tax rate ONCE, in the shared building block:
+  wholesale total for $100: 97.425
+  retail total for $100: 113.25 &lt;-- automatically consistent</div>
+  <p>In the composed version, <code>addTax</code> exists exactly once. Update it, and both <code>wholesaleTotal</code> and <code>retailTotal</code> — built by composing that same function — pick up the fix automatically. There's no second copy to forget.</p>
+</div>
+
+<h2>Related concepts</h2>
+<div class="related">
+  <a class="concept" href="01-pure-functions.html">
+    <h4>Pure Functions</h4>
+    <p>Composition is predictable specifically because each piece is pure — no hidden state sneaking between the steps.</p>
+  </a>
+  <a class="concept" href="03-referential-transparency.html">
+    <h4>Referential Transparency</h4>
+    <p>Lets you freely inline a composed pipeline back into one expression, or extract part of one out, without changing behavior.</p>
+  </a>
+  <a class="concept" href="06-currying.html">
+    <h4>Currying</h4>
+    <p>Curried functions (one argument at a time) are what make composing multi-argument functions into a clean pipeline actually practical.</p>
+  </a>
+  <a class="concept" href="05-higher-order-functions.html">
+    <h4>Higher-Order Functions</h4>
+    <p><code>pipe</code> and <code>compose</code> are themselves higher-order functions: they take functions in and return a new function.</p>
+  </a>
+  <span class="concept planned">
+    <h4>Point-Free Style</h4>
+    <p>Composition taken further &mdash; defining a pipeline entirely in terms of the functions it chains, without ever naming the data flowing through it.</p>
+  </span>
+</div>
+
+<h2>Run it yourself</h2>
+<div class="card">
+  <p class="run-hint">From the project root:</p>
+  <pre><code>npm test 4</code></pre>
+  <p class="run-hint">Build a third pipeline &mdash; a "clearance" total that applies the discount twice &mdash; by composing the same blocks in a new order: <code>pipe(applyDiscount, applyDiscount, addTax)</code>. No new formulas needed.</p>
+</div>
+
+<footer class="pager">
+  <a href="03-referential-transparency.html">&larr; Referential Transparency</a>
+  <a href="05-higher-order-functions.html">Higher-Order Functions &rarr;</a>
+</footer>
+
+</div>
+</body>
+</html>

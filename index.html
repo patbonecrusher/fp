@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functional Programming, One Concept at a Time</title>
+<link rel="stylesheet" href="lessons/style.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="top">
+    <span>FP Lessons</span>
+    <a href="https://hemanth.github.io/functional-programming-jargon/" target="_blank" rel="noopener">Jargon reference &#8599;</a>
+  </nav>
+
+  <h1>Functional Programming</h1>
+  <p class="lede">One concept per lesson: a plain-language explanation, why it matters, a before/after code comparison, and a runnable TypeScript file.</p>
+
+  <p class="callout">Lessons fall into two kinds. <strong>Techniques</strong> are things you actively write &mdash; point at a line of code and that line <em>is</em> the technique happening (composing functions, currying, memoizing). <strong>Properties &amp; tests</strong> are yes/no qualities you check on code you've already written (is it pure? immutable? referentially transparent?) &mdash; nobody "does" purity the way you "do" composition, but those properties are what license the techniques to be used safely.</p>
+
+  <h2>Techniques &mdash; things you write</h2>
+  <div class="card">
+    <ol style="padding-left: 20px; margin: 0;">
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/04-function-composition.html"><strong>Function Composition</strong></a> <span class="run-hint">(Lesson 4)</span>
+        <div class="run-hint">Build pipelines out of small, reusable functions instead of one big function per pipeline.</div>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/05-higher-order-functions.html"><strong>Higher-Order Functions</strong></a> <span class="run-hint">(Lesson 5)</span>
+        <div class="run-hint">Separate the loop (mechanism) from what happens on each item (policy) &mdash; write the loop once, reuse it forever.</div>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/06-currying.html"><strong>Currying</strong></a> <span class="run-hint">(Lesson 6)</span>
+        <div class="run-hint">Give a function part of its input now, get back a specialized function waiting for the rest.</div>
+      </li>
+      <li style="color: var(--muted);">Partial Application <span class="run-hint">(next up &mdash; Lesson 7)</span></li>
+    </ol>
+  </div>
+
+  <h2>Properties &amp; tests &mdash; things you check for</h2>
+  <div class="card">
+    <ol style="padding-left: 20px; margin: 0;">
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/01-pure-functions.html"><strong>Pure Functions</strong></a> <span class="run-hint">(Lesson 1)</span>
+        <div class="run-hint">Same input, same output, no side effects &mdash; the foundation everything else builds on.</div>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/02-immutability.html"><strong>Immutability</strong></a> <span class="run-hint">(Lesson 2)</span>
+        <div class="run-hint">What makes "pure function" a guarantee instead of a rule you have to remember.</div>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="lessons/03-referential-transparency.html"><strong>Referential Transparency</strong></a> <span class="run-hint">(Lesson 3)</span>
+        <div class="run-hint">The payoff of purity and immutability: an expression and its value become interchangeable.</div>
+      </li>
+    </ol>
+  </div>
+</div>
+</body>
+</html>
